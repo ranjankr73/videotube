@@ -6,7 +6,6 @@ const videoSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            index: true,
         },
         videoFile: {
             type: String,
@@ -27,28 +26,43 @@ const videoSchema = new mongoose.Schema(
         },
         channel: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Channel'
+            ref: 'Channel',
+            required: true,
+        },
+        visibility: {
+            type: String, 
+            enum: ["PUBLIC", "PRIVATE", "UNLISTED"],
+            default: "PRIVATE",
         },
         isPublished: {
             type: Boolean,
             default: false,
         },
+        publishedAt: {
+            type: Date
+        },
         views: {
             type: Number,
             default: 0
         },
-        likes: [
+        likesCount: {
+            type: Number,
+            default: 0,
+        },
+        commentsCount: {
+            type: Number,
+            default: 0,
+        },
+        tags: [
             {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Like',
+                type: String,
+                trim: true,
             }
         ],
-        comments: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Comment',
-            }
-        ],
+        category: {
+            type: String,
+            trim: true,
+        },
         isEnabled: {
             type: Boolean,
             default: true,
@@ -56,5 +70,16 @@ const videoSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+videoSchema.set("toJSON", {
+    transform: (_doc, ret) => {
+        delete ret.__v;
+        return ret;
+    }
+});
+
+videoSchema.index({ title: "text", description: "text" });
+videoSchema.index({ channel: 1 });
+videoSchema.index({ category: 1 });
 
 export const Video = mongoose.model('Video', videoSchema);

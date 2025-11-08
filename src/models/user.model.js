@@ -8,7 +8,6 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            index: true,
         },
         email: {
             type: String,
@@ -23,34 +22,47 @@ const userSchema = new mongoose.Schema(
             unique: true,
             lowercase: true,
             trim: true,
+            match: /^[a-zA-Z0-9_]+$/
         },
         password: {
             type: String,
             required: true,
             trim: true,
+            minLength: 8
         },
         profile: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Profile',
         },
+        role: {
+            type: String,
+            enum: ["user", "creator", "admin"],
+            default: "user",
+        },
+        status: {
+            type: String,
+            enum: ["active", "suspended", "banned"],
+            default: "active",
+        },
         refreshToken: {
             type: String,
-            required: true,
+            default: null,
         }
     }, 
     { timestamps: true }
 );
 
-userSchema.pre('save', async function(_req, _res, next){
+userSchema.pre('save', async function(next){
     if(!this.isModified("password")) return next();
 
-    this.password = await bcrypt.hash(this.password, 10);
+    const salt = await bcrypt.genSalt(parseInt(process.env.SALT_ROUNDS) || 10);
+    this.password = await bcrypt.hash(this.password, salt);
 
     return next();
 });
 
-userSchema.methods.isPasswordCorrect = async function(password) {
-    return await bcrypt.compare(this.password, password);
+userSchema.methods.isPasswordCorrect = async function(userPassword) {
+    return await bcrypt.compare(userPassword, this.password);
 };
 
 userSchema.methods.generateAccessToken = function() {
@@ -63,7 +75,8 @@ userSchema.methods.generateAccessToken = function() {
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "15m",
+            algorithm: "HS256"
         }
     );
 };
@@ -75,9 +88,23 @@ userSchema.methods.generateRefreshToken = function() {
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "30d",
+            algorithm: "HS256"
         }
-    )
+    );
 };
+
+userSchema.set("toJSON", {
+    transform: (_doc, ret) => {
+        delete ret.password;
+        delete ret.refreshToken;
+        delete ret.__v;
+        return ret;
+    }
+});
+
+userSchema.index({ fullName: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
 
 export const User = mongoose.model("User", userSchema);
