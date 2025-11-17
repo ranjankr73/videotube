@@ -1,4 +1,5 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const videoSchema = new mongoose.Schema(
     {
@@ -26,11 +27,11 @@ const videoSchema = new mongoose.Schema(
         },
         channel: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Channel',
+            ref: "Channel",
             required: true,
         },
         visibility: {
-            type: String, 
+            type: String,
             enum: ["PUBLIC", "PRIVATE", "UNLISTED"],
             default: "PRIVATE",
         },
@@ -39,11 +40,11 @@ const videoSchema = new mongoose.Schema(
             default: false,
         },
         publishedAt: {
-            type: Date
+            type: Date,
         },
         views: {
             type: Number,
-            default: 0
+            default: 0,
         },
         likesCount: {
             type: Number,
@@ -57,7 +58,7 @@ const videoSchema = new mongoose.Schema(
             {
                 type: String,
                 trim: true,
-            }
+            },
         ],
         category: {
             type: String,
@@ -66,7 +67,7 @@ const videoSchema = new mongoose.Schema(
         isEnabled: {
             type: Boolean,
             default: true,
-        }
+        },
     },
     { timestamps: true }
 );
@@ -75,11 +76,13 @@ videoSchema.set("toJSON", {
     transform: (_doc, ret) => {
         delete ret.__v;
         return ret;
-    }
+    },
 });
 
 videoSchema.index({ title: "text", description: "text" });
 videoSchema.index({ channel: 1 });
 videoSchema.index({ category: 1 });
 
-export const Video = mongoose.model('Video', videoSchema);
+videoSchema.plugin(mongooseAggregatePaginate);
+
+export const Video = mongoose.model("Video", videoSchema);
