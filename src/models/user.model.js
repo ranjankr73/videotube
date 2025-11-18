@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             trim: true,
             lowercase: true,
-            match: [/^\S+@\S+\.\S+$/, "Invalid Email Format"]
+            match: [/^\S+@\S+\.\S+$/, "Invalid Email Format"],
         },
         username: {
             type: String,
@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             lowercase: true,
             trim: true,
-            match: [/^[a-zA-Z0-9_]+$/, "Invalid Username Format"]
+            match: [/^[a-zA-Z0-9_]+$/, "Invalid Username Format"],
         },
         password: {
             type: String,

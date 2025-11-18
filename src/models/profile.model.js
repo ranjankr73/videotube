@@ -4,11 +4,11 @@ const profileSchema = new mongoose.Schema(
     {
         avatar: {
             type: String,
-            default: "https://avatar.iran.liara.run/public"
+            default: "https://avatar.iran.liara.run/public",
         },
         coverImage: {
             type: String,
-            default: "https://placehold.co/1000x400?text=Welcome+to+VideoTube"
+            default: "https://placehold.co/1000x400?text=Welcome+to+VideoTube",
         },
         bio: {
             type: String,
@@ -27,15 +27,15 @@ const profileSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        channel : {
+        channel: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Channel',
+            ref: "Channel",
         },
         subscribedChannels: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'Channel'
-            }
+                ref: "Channel",
+            },
         ],
     },
     { timestamps: true }
@@ -48,4 +48,4 @@ profileSchema.set("toJSON", (_doc, ret) => {
 
 profileSchema.index({ channel: 1 }, { unique: true, sparse: true });
 
-export const Profile = mongoose.model('Profile', profileSchema);
+export const Profile = mongoose.model("Profile", profileSchema);
