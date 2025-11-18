@@ -1,9 +1,16 @@
-import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 import { Profile } from "../models/profile.model.js";
-import mongoose from "mongoose";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+
+const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+};
 
 const registerUser = asyncHandler(async (req, res) => {
     const { fullName, email, username, password } = req.body;
@@ -56,21 +63,16 @@ const registerUser = asyncHandler(async (req, res) => {
 
         await session.commitTransaction();
 
-        const options = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-        };
-
         return res
             .status(201)
-            .cookie("accessToken", accessToken, options)
             .cookie("refreshToken", refreshToken, options)
+            .cookie("accessToken", accessToken, {
+                ...options,
+                maxAge: 15 * 60 * 1000,
+            })
             .json(
                 new ApiResponse(201, "User registered successfully", {
                     user,
-                    accessToken,
-                    refreshToken,
                 })
             );
     } catch (error) {
@@ -82,7 +84,45 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
+    const { email, username, password } = req.body;
 
+    if (!email && !username) {
+        throw new ApiError(400, "Email or Username is required");
+    }
+
+    const user = await User.findOne({
+        $or: [{ email }, { username }],
+    });
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const isPasswordValid = await user.isPasswordCorrect(password);
+
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Password is incorrect");
+    }
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+
+    await user.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, {
+            ...options,
+            maxAge: 15 * 60 * 1000,
+        })
+        .json(
+            new ApiResponse(200, "User logged in successfully", {
+                user,
+            })
+        );
 });
 
 export { registerUser, loginUser };

@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
+            index: true,
         },
         email: {
             type: String,
@@ -15,6 +16,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             trim: true,
             lowercase: true,
+            index: true,
             match: [/^\S+@\S+\.\S+$/, "Invalid Email Format"],
         },
         username: {
@@ -23,6 +25,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             lowercase: true,
             trim: true,
+            index: true,
             match: [/^[a-zA-Z0-9_]+$/, "Invalid Username Format"],
         },
         password: {
@@ -103,9 +106,5 @@ userSchema.set("toJSON", {
         return ret;
     },
 });
-
-userSchema.index({ fullName: 1 });
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
 
 export const User = mongoose.model("User", userSchema);
