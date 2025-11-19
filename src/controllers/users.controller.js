@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { Profile } from "../models/profile.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -141,4 +142,62 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, "User logged out successfully", {}));
 });
 
-export { registerUser, loginUser, logoutUser };
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const token = req.cookies?.refreshToken || req.body.refreshToken;
+
+    if (!token) {
+        throw new ApiError(401, "Unauthorized request");
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            token,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+
+        const user = await User.findById(decodedToken?._id);
+
+        if (!user) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+
+        if (token !== user?.refreshToken) {
+            throw new ApiError(401, "Refresh Token is expired or used");
+        }
+
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        return res
+            .status(200)
+            .cookie("refreshToken", refreshToken, OPTIONS)
+            .cookie("accessToken", accessToken, {
+                ...OPTIONS,
+                maxAge: 15 * 60 * 1000,
+            })
+            .json(
+                new ApiResponse(200, "Access Token refreshed successfully", {})
+            );
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
+        if (
+            error.name === "TokenExpiredError" ||
+            error.name === "JsonWebTokenError"
+        ) {
+            throw new ApiError(401, "Invalid or expired refresh token");
+        }
+
+        throw new ApiError(
+            500,
+            error?.message || "Internal server error during token refresh"
+        );
+    }
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken };
