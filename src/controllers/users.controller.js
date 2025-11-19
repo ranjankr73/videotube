@@ -93,6 +93,13 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(404, "User not found");
     }
 
+    if (user.status !== "active") {
+        throw new ApiError(
+            403,
+            "Your account has been suspended or banned. Contact support."
+        );
+    }
+
     const isPasswordValid = await user.isPasswordCorrect(password);
 
     if (!isPasswordValid) {
@@ -200,4 +207,110 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+        throw new ApiError(400, "Old password and new password are required");
+    }
+
+    const user = await User.findById(req.user._id);
+
+    const isPasswordValid = await user.isPasswordCorrect(oldPassword);
+
+    if (!isPasswordValid) {
+        throw new ApiError(400, "Invalid old password");
+    }
+
+    user.password = newPassword;
+
+    await user.save();
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, "Password changed successfully", {}));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate("profile");
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, "Current user fetched successfully", { user })
+        );
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { fullName, email, username } = req.body;
+
+    if (!fullName && !email && !username) {
+        throw new ApiError(
+            400,
+            "At least one field (fullName, email, username) is required to update"
+        );
+    }
+
+    if (email || username) {
+        const existingUser = await User.findOne({
+            $or: [{ email: email }, { username: username }],
+            _id: { $ne: req.user?._id },
+        });
+
+        if (existingUser) {
+            throw new ApiError(
+                409,
+                "Email or Username is already taken by another user"
+            );
+        }
+    }
+
+    const updatedData = {};
+    if (fullName) updatedData.fullName = fullName;
+    if (email) updatedData.email = email;
+    if (username) updatedData.username = username.toLowerCase();
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: updatedData,
+        },
+        { new: true }
+    );
+
+    return res.status(200).json(
+        new ApiResponse(200, "Account details updated successfully", {
+            user,
+        })
+    );
+});
+
+const deleteAccount = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user?._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    user.status = "suspended";
+    user.refreshToken = null;
+
+    await user.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .clearCookie("refreshToken", OPTIONS)
+        .clearCookie("accessToken", OPTIONS)
+        .json(new ApiResponse(200, "Account deleted successfully", {}));
+});
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    deleteAccount,
+};
