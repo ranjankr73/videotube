@@ -4,13 +4,7 @@ import { Profile } from "../models/profile.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-
-const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-};
+import { OPTIONS } from "../constants.js";
 
 const registerUser = asyncHandler(async (req, res) => {
     const { fullName, email, username, password } = req.body;
@@ -65,9 +59,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
         return res
             .status(201)
-            .cookie("refreshToken", refreshToken, options)
+            .cookie("refreshToken", refreshToken, OPTIONS)
             .cookie("accessToken", accessToken, {
-                ...options,
+                ...OPTIONS,
                 maxAge: 15 * 60 * 1000,
             })
             .json(
@@ -113,9 +107,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .cookie("refreshToken", refreshToken, options)
+        .cookie("refreshToken", refreshToken, OPTIONS)
         .cookie("accessToken", accessToken, {
-            ...options,
+            ...OPTIONS,
             maxAge: 15 * 60 * 1000,
         })
         .json(
@@ -125,4 +119,26 @@ const loginUser = asyncHandler(async (req, res) => {
         );
 });
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+
+    await User.findByIdAndUpdate(
+        userId,
+        {
+            $unset: {
+                refreshToken: 1,
+            },
+        },
+        {
+            new: true,
+        }
+    );
+
+    return res
+        .status(200)
+        .clearCookie("refreshToken", OPTIONS)
+        .clearCookie("accessToken", OPTIONS)
+        .json(new ApiResponse(200, "User logged out successfully", {}));
+});
+
+export { registerUser, loginUser, logoutUser };
