@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { getProfile, getPublicProfile, updateAvatar, updateCoverImage, updateProfile } from "../controllers/profile.controller";
+import {
+    getProfile,
+    getPublicProfile,
+    updateAvatar,
+    updateCoverImage,
+    updateProfile,
+} from "../controllers/profile.controller.js";
 
 const router = Router();
 
