@@ -1,6 +1,14 @@
-// Method Endpoint     Description                                 Access
-// GET    /:username   Get public profile (View someone else's profile) Public
-// GET    /me          Get my full profile details Auth
-// PATCH  /            "Update bio, address, phone, social links" Auth
-// PATCH  /avatar      Upload/Update profile picture Auth
-// PATCH  /cover-image Upload/Update background cover image Auth
+import { Router } from "express";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { getProfile, getPublicProfile, updateAvatar, updateCoverImage, updateProfile } from "../controllers/profile.controller";
+
+const router = Router();
+
+router.route("/:username").get(getPublicProfile);
+
+router.route("/me").get(verifyJWT, getProfile);
+router.route("/").patch(verifyJWT, updateProfile);
+router.route("/avatar").patch(verifyJWT, updateAvatar);
+router.route("/cover-image").patch(verifyJWT, updateCoverImage);
+
+export default router;

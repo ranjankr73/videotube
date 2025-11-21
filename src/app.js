@@ -20,8 +20,10 @@ app.use(cookieParser());
 
 //import routes
 import userRouter from "./routes/user.route.js";
+import profileRouter from "./routes/profile.route.js";
 
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/profiles", profileRouter);
 
 app.use((req, res, next) => {
     next(new ApiError(404, `Route ${req.originalUrl} not found!`));
