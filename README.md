@@ -17,9 +17,9 @@ Includes authentication, channels, videos, playlists, posts, comments, likes, su
 - [Tech Stack](#-tech-stack)
 - [Folder Structure](#-folder-structure)
 - [Environment Variables](#-environment-variables)
-- [Installation & Setup](#-installation--setup)
+- [Installation and Setup](#-installation-and-setup)
 - [API Endpoints](#-api-endpoints)
-- [File Uploads](#-file-uploads-cloudinary)
+- [File Uploads](#-file-uploads)
 - [Security](#-security)
 - [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
@@ -177,7 +177,7 @@ Includes authentication, channels, videos, playlists, posts, comments, likes, su
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙ Environment Variables
 
 Create a `.env` file in the root directory:
 
@@ -207,7 +207,7 @@ SALT_ROUNDS=10
 
 ---
 
-## ▶️ Installation & Setup
+## ▶ Installation and Setup
 
 ### Prerequisites
 - Node.js (v16 or higher)
@@ -352,7 +352,7 @@ Server runs at: `http://localhost:4000`
 
 ---
 
-## ☁️ File Uploads (Cloudinary)
+## ☁ File Uploads
 
 Videos and thumbnails are uploaded to Cloudinary using utility functions:
 
@@ -434,3 +434,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <p align="center">
   Made with ❤️ by VideoTube Team
 </p>
+
