@@ -18,12 +18,32 @@ const uploadOnCloudinary = async (localFilePath) => {
         fs.unlinkSync(localFilePath);
         return response;
     } catch (error) {
-        console.error("Error while uploading on cloudinary");
-        console.error(error);
-
         fs.unlinkSync(localFilePath);
         return null;
     }
 };
 
-export { uploadOnCloudinary };
+const deleteFromCloudinary = async (publicId, resource_type = "image") => {
+    try {
+        if (!publicId) return null;
+
+        if (publicId.includes("cloudinary.com")) {
+            const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+            const match = publicId.match(regex);
+            if (match && match[1]) {
+                publicId = match[1];
+            }
+        }
+
+        const result = await cloudinary.uploader.destroy(publicId, {
+            resource_type: resource_type,
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error while deleting from cloudinary", error);
+        return null;
+    }
+};
+
+export { uploadOnCloudinary, deleteFromCloudinary };
